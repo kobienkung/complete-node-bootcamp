@@ -53,6 +53,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   creatSendToken(newUser, 201, res);
 });
 
+// No need to catchAsync to alert the error, in case if there is no token, use try catch
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body; // const email = req.body.email
 
@@ -71,12 +72,26 @@ exports.login = catchAsync(async (req, res, next) => {
   creatSendToken(user, 200, res);
 });
 
+// send fake content cookie to modify real cookie instead of delete it
+exports.logout = (req, res) => {
+  res.clearCookie();
+  // const cookieOptions = {
+  //   expires: new Date(Date.now() + 10 * 1000), // expires in 10 sec
+  //   httpOnly: true,
+  // };
+  // res.cookie('jwt', 'loggedout', cookieOptions);
+
+  res.status(200).json({ status: 'success' });
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and checking if it's there
   let token;
   const { cookie } = req.headers;
   const wantedCookieName = 'jwt';
-  if (cookie) {
+  if (req.cookie.jwt) {
+    token = req.cookie.jwt;
+  } else if (cookie) {
     const value = `; ${cookie}`;
     const parts = value.split(`; ${wantedCookieName}=`);
     if (parts.length === 2) {
@@ -85,6 +100,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
+    res.redirect('/');
     return next(
       new AppError('You are not logged in! Please log in to get access.', 401),
     );
@@ -127,6 +143,34 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // Grant access to protected route
   req.user = currentUser;
+  req.locals.user = currentUser; // make available to http templates
+  next();
+});
+
+// Only for rendering page: user pictur if user logged in, no error
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  if (req.cookie.jwt) {
+    // 1) Verify token
+    const decoded = await promisify(jwt.verify)(
+      req.cookie.jwt,
+      process.env.JWT_SECRET,
+    );
+
+    // 2) Check if user still exists: in case if the user is deleted
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next();
+    }
+
+    // 4) Check if user changed password after the JWT token was issued
+    if (currentUser.changePasswordAfter(decoded.iat)) {
+      return next();
+    }
+
+    // Ther is a logged in user
+    req.locals.user = currentUser;
+    return next();
+  }
   next();
 });
 
