@@ -3,13 +3,13 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
-exports.getOverview = catchAsync((req, res, next) => {
+exports.getOverview = catchAsync(async (req, res, next) => {
   // 1) Get the tour data from collection
-  const tours = Tour.find();
+  const tours = await Tour.find();
 
   // 2) Build template
   // 3) Render that template using tour data from 1)
-  res.status(200).render('base', {
+  res.status(200).render('overview', {
     title: 'All tours',
     tours,
   }); // will look in __direname + views
@@ -18,7 +18,7 @@ exports.getOverview = catchAsync((req, res, next) => {
 exports.getTour = catchAsync(async (req, res, next) => {
   // 1) Get the data from the requested tour (including reviews and guides)
   const tour = await Tour.findOne({
-    name: req.params.slug,
+    slug: req.params.slug,
   }).populate({
     path: 'reviews',
     select: 'review rating user',
@@ -31,7 +31,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
   // 2) build template
   // 3) Render that template using the data
   res.status(200).render('tour', {
-    title: 'The Fores Hiker Tour',
+    title: `${tour.name} Tour`,
     tour,
   });
 });
@@ -44,7 +44,7 @@ exports.getLoginForm = (req, res) => {
 
 exports.getAccount = (req, res) => {
   res.status(200).render('account', {
-    title: 'Log in to your account',
+    title: 'Your account',
   });
 };
 

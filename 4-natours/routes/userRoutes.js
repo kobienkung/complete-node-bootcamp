@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/signup', authController.signup); // only post for '/signup' not get, patch, delete
 router.post('/login', authController.login);
+router.get('/logout', authController.logout);
 
 router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);

@@ -43,7 +43,7 @@ app.use('/api', limiter); // if the app restarts, it will count from 0 again
 
 // Body parser, reading data from body to req.body
 app.use(express.json({ limit: '10kb' })); // middle ware for modifying incoming request data e.g., make req.body
-app.use(express.urlencoded({ extended: true, limit: '10kb' })); // get data from form
+app.use(express.urlencoded({ extended: true, limit: '10kb' })); // get data from a form
 app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection
