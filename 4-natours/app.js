@@ -12,6 +12,7 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const viewRouter = require('./routes/viewRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
@@ -67,6 +68,29 @@ app.use(
   }),
 );
 
+app.use((req, res, next) => {
+  res.setHeader(
+    'Report-To',
+    `{"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"${
+      req.protocol
+    }://${req.get('host')}:5500/__cspreport__"}],"include_subdomains":true}`,
+  );
+  res.setHeader(
+    'Content-Security-Policy',
+    // "script-src 'self' https://js.stripe.com",
+    "default-src 'self' https://*.mapbox.com https://js.stripe.com/v3/;base-uri 'self';block-all-mixed-content;font-src 'self' https: data:;frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src https://js.stripe.com/v3/ https://cdnjs.cloudflare.com https://api.mapbox.com 'self' blob: ;script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests;",
+  );
+  // res.setHeader(
+  //   'Content-Security-Policy',
+  //   "default-src 'self'; script-src 'self' https://js.stripe.com/v3/ https://cdnjs.cloudflare.com https://api.mapbox.com; report-to csp-endpoint; report-uri /__cspreport__;",
+  // );
+  next();
+});
+
+app.post('/__cspreport__', (req, res) => {
+  console.log(req.body);
+}); // report if you forget to allow a legitimate source in production or when an attacker is trying to exploit an XSS attack vector (which you need to identify and stop immediately)
+
 // Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
@@ -80,6 +104,8 @@ app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
+
 // app.get('/api/v1/tours', getAllTours);
 // app.get('/api/v1/tours/:id', getTour);
 // app.post('/api/v1/tours', createTour);

@@ -13,11 +13,15 @@ export const updateSettings = async (data, type) => {
     const res = await axios({
       method: 'PATCH',
       url,
-      data
+      data,
     });
 
     if (res.data.status === 'success') {
       showAlert('success', `${type.toUpperCase()} updated successfully!`);
+      console.log(type);
+      if (type === 'photo') {
+        return res.data.data.user.photo;
+      }
     }
   } catch (err) {
     showAlert('error', err.response.data.message);
